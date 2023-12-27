@@ -53,4 +53,7 @@ class DBConnect:
         password = args[3]
         port = args[4]
 
-        return mysql.connector.connect(host=host, database=database, user=user, password=password, port=port)
+        try:
+            return mysql.connector.connect(host=host, database=database, user=user, password=password, port=port)
+        except KeyError:
+            print(*args)

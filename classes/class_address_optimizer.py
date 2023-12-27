@@ -383,7 +383,15 @@ class AddressOptimizer():
         # addresses = self.get_data()
         conn = self.connect_db()
         cursor = conn.cursor(buffered=True)
-        query = ("SELECT address, city, state, zip_code FROM muniregdb.property")
+        # query = ("SELECT address, city, state, zip_code FROM muniregdb.property")
+        query = ("""
+        SELECT muniregdb.property.address, muniregdb.property.city, muniregdb.property.state, muniregdb.property.zip_code, muniregdb.zone.name
+        FROM muniregdb.property
+        INNER JOIN muniregdb.property_zone
+        ON muniregdb.property.id = muniregdb.property_zone.property_id
+        INNER JOIN muniregdb.zone
+        ON muniregdb.property_zone.zone_id = muniregdb.zone.id""")
+
         cursor.execute(query)
 
         for line in cursor:
@@ -403,23 +411,23 @@ class AddressOptimizer():
         new_data = self.get_data()
         old_data = self.get_db_data()
 
-        needles = set(new_data.keys()) if (len(new_data) < len(old_data)) else set(old_data.keys())
-        haystack = old_data if (len(new_data) < len(old_data)) else new_data
+        count = 0
+
+        needles = set(new_data.keys())
+        haystack = old_data
+
+        # print(len(needles))
+        # print(len(haystack))
+        # print(len(new_data))
+        # print(len(old_data))
 
         for needle in needles:
             if needle in haystack:
-                print(new_data[needle])
-                print(haystack[needle])
-                try:
-                    if (haystack[needle]['city'] == new_data[needle]['city'] and haystack[needle]['state'] ==
-                            new_data[needle]['state']):
-                        self._dupes[needle] = haystack[needle]
-                    else:
-                        self._fresh[needle] = new_data[needle]
-                except TypeError:
-                    print('Dupes', type(haystack[needle]), needle, haystack[needle])
+                count += 1
+                self._dupes[needle] = needle
             else:
-                try:
-                    self._fresh[needle] = new_data[needle]
-                except TypeError:
-                    print('Fresh', type(new_data[needle]), needle, new_data[needle])
+                self._fresh[needle] = needle
+
+        #print(count)
+        #print(len(self._dupes))
+        #print(len(self._fresh))
